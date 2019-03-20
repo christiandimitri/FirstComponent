@@ -6,15 +6,15 @@ using Rhino.Geometry;
 
 namespace FirstComponentTest
 {
-    public class CDimi_MeshRipple : GH_Component
+    public class MeshRipple : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the CDimi_MeshRipple class.
         /// </summary>
-        public CDimi_MeshRipple()
+        public MeshRipple()
           : base("Mesh Ripple", "MeshRip",
               "Displace the points of the mesh",
-              "ChrisDimi", "Meshes")
+              "FunAlgorithms", "Meshes")
         {
         }
 
@@ -67,12 +67,15 @@ namespace FirstComponentTest
             // Deform the mesh
 
             Mesh iterMesh = mesh;
-
-            for (int i=0; i < iter; i++) iterMesh = DeformMeshByAttractors(iterMesh, attractors, distance);
+            List<double> x = new List<double>();
+            List<Point3d> y = new List<Point3d>();
+            for (int i=0; i < iter; i++) iterMesh = DeformMeshByAttractors(iterMesh, attractors, distance, out x, out y);
             
             // Finally output your resulting mesh
 
             DA.SetData(0,iterMesh);
+            DA.SetDataList(1, x);
+            DA.SetDataList(2, y);
         }
 
         
@@ -92,11 +95,11 @@ namespace FirstComponentTest
 
             foreach (Point3d vertex in mesh.Vertices)
             {
-                double holder = 1.0;
+                double holder = 0.0;
                 foreach (Point3d attractor in attractors)
                 {
                     double displacement = computeDisplacement(vertex, attractor, distance);
-                    holder = holder * displacement;
+                    holder = holder + displacement;
 
                 }
                 dispV.Add(holder / attractors.Count);
@@ -131,7 +134,7 @@ namespace FirstComponentTest
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return Properties.Resources.MeshRippleLogo;
+                return FirstComponentTest.Properties.Resources.MeshRippleLogo;
             }
         }
 
