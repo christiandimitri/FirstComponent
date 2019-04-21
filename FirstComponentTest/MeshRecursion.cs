@@ -26,6 +26,7 @@ namespace FirstComponentTest
             pManager.AddMeshParameter("mesh", "m", "Initial mesh for lunching algorithm", GH_ParamAccess.item);
             pManager.AddNumberParameter("displacement", "disp", "Displacement distance from where the points will move", GH_ParamAccess.item);
             pManager.AddIntegerParameter("iter", "iter", "iter number", GH_ParamAccess.item, 1);
+
         }
 
         /// <summary>
@@ -34,6 +35,7 @@ namespace FirstComponentTest
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddMeshParameter("mesh", "aggregated mesh", "Output mesh after aggregating the faces", GH_ParamAccess.item);
+
         }
 
         /// <summary>
@@ -49,12 +51,11 @@ namespace FirstComponentTest
             if (!DA.GetData(0, ref mesh)) return;
             if (!DA.GetData(1, ref disp)) return;
             if (!DA.GetData(2, ref iter)) return;
-
             if (!mesh.IsValid) { AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Please input a valid mesh"); return; };
             if (iter == 0) { AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Iter must be greater than zero");return; };
 
             Mesh subdividedMesh = new Mesh();
-
+            mesh.RebuildNormals();
             for (int i = 0; i < iter; i++)
             {
             subdividedMesh = new Mesh();
@@ -63,10 +64,11 @@ namespace FirstComponentTest
                 for (int count = 0; count < mesh.Faces.Count; count++)
                 {
                     Point3d faceCenter = mesh.Faces.GetFaceCenter(count);
-                    Vector3d normals = mesh.NormalAt(mesh.ClosestMeshPoint(faceCenter, 0.0));
-                    faceCenter += (normals * disp);
+                    Vector3d normal = mesh.NormalAt(mesh.ClosestMeshPoint(faceCenter, 0.0));
+                    normal += computeFaceTangentVector(mesh, count);
+                    faceCenter += normal * disp;
+
                     subdividedMesh.Vertices.Add(faceCenter);
-                    
                     subdividedMesh.Faces.AddFace(mesh.Faces[count].A, mesh.Faces[count].B, subdividedMesh.Vertices.Count - 1);
                     subdividedMesh.Faces.AddFace(mesh.Faces[count].B, mesh.Faces[count].C, subdividedMesh.Vertices.Count - 1);
                     if (mesh.Faces[count].IsQuad)
@@ -87,6 +89,24 @@ namespace FirstComponentTest
             DA.SetData(0, subdividedMesh);
         }
 
+
+        public List<Vector3d> computeTangentVectors(Mesh mesh)
+        {
+            List<Vector3d> tempTangentVectors = new List<Vector3d>();
+            for (int i = 0; i < mesh.Faces.Count; i++)
+            {
+                tempTangentVectors.Add(computeFaceTangentVector(mesh, i));
+            }
+            return tempTangentVectors;
+        }
+
+        public Vector3d computeFaceTangentVector(Mesh mesh, int faceIndex)
+        {
+
+            Vector3d normal = mesh.FaceNormals[faceIndex];
+            Vector3d cross1 = Vector3d.CrossProduct(Vector3d.ZAxis, normal);
+            return Vector3d.CrossProduct(normal, cross1);
+        }
 
 
         /// <summary>

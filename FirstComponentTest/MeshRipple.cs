@@ -70,9 +70,8 @@ namespace FirstComponentTest
             List<double> x = new List<double>();
             List<Point3d> y = new List<Point3d>();
             for (int i=0; i < iter; i++) iterMesh = DeformMeshByAttractors(iterMesh, attractors, distance, out x, out y);
-            
-            // Finally output your resulting mesh
 
+            // Finally output your resulting mesh
             DA.SetData(0,iterMesh);
             DA.SetDataList(1, x);
             DA.SetDataList(2, y);
